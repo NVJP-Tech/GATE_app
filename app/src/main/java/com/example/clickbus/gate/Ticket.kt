@@ -1,12 +1,12 @@
 package com.example.clickbus.gate
 
-enum class OperacaoPlataforma {
+enum class OcupacaoPlataforma  {
     VAZIA, NORMAL, CHEIA
 }
 
 data class Plataforma(
     val nome: String,
-    val ocupacao: OperacaoPlataforma
+    val ocupacao: OcupacaoPlataforma
 )
 
 data class Ticket(
