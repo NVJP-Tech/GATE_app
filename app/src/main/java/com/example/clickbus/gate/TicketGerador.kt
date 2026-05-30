@@ -33,14 +33,21 @@ fun gerarTicketAleatorio(): Ticket {
     val minutos = listOf(0,15,30,45).random()
     val embarqueEmMinutos = hora * 60 + minutos
 
-
+    val corLinha = when (plataformaNome) {
+        "A" -> 0xFFFFD700L // Amarela
+        "B" -> 0xFF378ADDL // Azul
+        "C" -> 0xFF639922L // Verde
+        "D" -> 0xFFE24B4AL // Vermelha
+        else -> 0xFFFFFFFFL
+    }
     return Ticket(
         passageiros.random(),
         origem = rota.first,
         destino = rota.second,
         plataforma = Plataforma(
             nome = plataformaNome,
-            ocupacao = ocupacao
+            ocupacao = ocupacao,
+            corLinha = corLinha
         ),
         horarioEmbarqueMinutos = embarqueEmMinutos
     )

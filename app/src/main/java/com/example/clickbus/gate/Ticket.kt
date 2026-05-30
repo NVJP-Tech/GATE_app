@@ -6,7 +6,8 @@ enum class OcupacaoPlataforma  {
 
 data class Plataforma(
     val nome: String,
-    val ocupacao: OcupacaoPlataforma
+    val ocupacao: OcupacaoPlataforma,
+    val corLinha: Long
 )
 
 data class Ticket(

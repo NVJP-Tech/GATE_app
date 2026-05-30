@@ -1,5 +1,6 @@
 package com.example.clickbus.gate
 
+import android.R
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -30,6 +31,8 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun GateTela() {
     var ticket by remember { mutableStateOf(gerarTicketAleatorio()) }
+    var horarioAtualMinutos by remember { mutableStateOf(720)}
+    var decisao by remember { mutableStateOf<DecisaoGate?>(null) }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -89,7 +92,30 @@ fun GateTela() {
             }
         }
 
-        Spacer(modifier = Modifier.height(32.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "Horario atual: ${minutosParaHorario(horarioAtualMinutos)}",
+            color = Color.White,
+            fontSize = 14.sp,
+            modifier = Modifier.padding(horizontal = 24.dp)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Slider(
+            value = horarioAtualMinutos.toFloat(),
+            onValueChange = {horarioAtualMinutos = it.toInt()},
+            valueRange = 360f..1320f,
+            modifier = Modifier.padding(horizontal = 24.dp),
+            colors = SliderDefaults.colors(
+                thumbColor = Color(0xFF4F9CF9),
+                activeTrackColor = Color(0xFF4F9CF9),
+                inactiveTrackColor = Color(0xFF16213E)
+            )
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
 
         Button(
             onClick = { ticket = gerarTicketAleatorio() },
@@ -106,8 +132,57 @@ fun GateTela() {
                 fontWeight = FontWeight.Bold
             )
         }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(
+            onClick = {
+                val contexto = criarContexto(
+                    ticket = ticket,
+                    horarioAtualMinutos = horarioAtualMinutos
+                )
+                decisao = aplicarMotorDeRegras(contexto)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(0xFF639922)
+            )
+        ) {
+            Text(
+                text = "Validar Ticket",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+
+        Spacer(modifier =  Modifier.height(24.dp))
+
+        decisao?.let {d ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(d.corIndicador)
+                )
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        text = "${d.resultado.titulo}",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                        }
+                }
+            }
+        }
     }
-}
 
 @Composable
 fun InfoItem(label: String, valor: String) {
