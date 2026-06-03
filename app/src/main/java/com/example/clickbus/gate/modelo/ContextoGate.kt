@@ -1,8 +1,7 @@
-package com.example.clickbus.gate
+package com.example.clickbus.gate.modelo
 
-data class ContextoGate (
+data class ContextoGate(
     val ticket: Ticket,
     val tempoRestante: Int,
-    val horarioAtual: Int,
     val ocupacaoPlataforma: OcupacaoPlataforma = ticket.plataforma.ocupacao
 )

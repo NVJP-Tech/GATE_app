@@ -1,15 +1,12 @@
-package com.example.clickbus.gate
+package com.example.clickbus.gate.regras
+
+import com.example.clickbus.gate.modelo.ContextoGate
+import com.example.clickbus.gate.modelo.OcupacaoPlataforma
 
 enum class ResultadoTriagem(val titulo: String) {
-    AREA_DESCANSO(
-        titulo = "Area de Descanso"
-    ),
-    EMBARQUE_IMEDIATO(
-        titulo = "Embarque Imediato"
-    ),
-    REALOCACAO(
-        titulo = "Realocação"
-    )
+    AREA_DESCANSO("Área de Descanso"),
+    EMBARQUE_IMEDIATO("Embarque Imediato"),
+    REALOCACAO("Realocação")
 }
 
 data class DecisaoGate(
@@ -18,13 +15,13 @@ data class DecisaoGate(
     val corIndicador: Long
 )
 
-data class Regra(
+private data class Regra(
     val descricao: String,
     val condicao: (ContextoGate) -> Boolean,
     val decisao: (ContextoGate) -> DecisaoGate
 )
 
-val matrizDeRegras: List<Regra> = listOf(
+private val matrizDeRegras: List<Regra> = listOf(
 
     Regra(
         descricao = "Passageiro atrasado",
@@ -52,9 +49,10 @@ val matrizDeRegras: List<Regra> = listOf(
 
     Regra(
         descricao = "No horário mas plataforma cheia",
-        condicao = {ctx ->
+        condicao = { ctx ->
             ctx.tempoRestante in 0..60 &&
-                    ctx.ocupacaoPlataforma == OcupacaoPlataforma.CHEIA },
+                    ctx.ocupacaoPlataforma == OcupacaoPlataforma.CHEIA
+        },
         decisao = { ctx ->
             DecisaoGate(
                 resultado = ResultadoTriagem.AREA_DESCANSO,
@@ -66,8 +64,10 @@ val matrizDeRegras: List<Regra> = listOf(
 
     Regra(
         descricao = "No horário e plataforma disponível",
-        condicao = { ctx->  ctx.tempoRestante in 0..60 &&
-                ctx.ocupacaoPlataforma != OcupacaoPlataforma.CHEIA },
+        condicao = { ctx ->
+            ctx.tempoRestante in 0..60 &&
+                    ctx.ocupacaoPlataforma != OcupacaoPlataforma.CHEIA
+        },
         decisao = { ctx ->
             DecisaoGate(
                 resultado = ResultadoTriagem.EMBARQUE_IMEDIATO,
@@ -79,25 +79,11 @@ val matrizDeRegras: List<Regra> = listOf(
 )
 
 fun aplicarMotorDeRegras(contexto: ContextoGate): DecisaoGate {
-
-    val regraAplicada = matrizDeRegras.firstOrNull { regra ->
-        regra.condicao(contexto)
-    }
-
-    return regraAplicada?.decisao(contexto) ?: DecisaoGate(
-        resultado = ResultadoTriagem.AREA_DESCANSO,
-        mensagem = "Situação não identificada. Procure um atendente.",
-        corIndicador = 0xFF888780
-    )
-}
-
-fun criarContexto(
-    ticket: Ticket,
-    horarioAtualMinutos: Int
-): ContextoGate {
-    return ContextoGate(
-        ticket = ticket,
-        tempoRestante = ticket.horarioEmbarqueMinutos - horarioAtualMinutos,
-        horarioAtual = horarioAtualMinutos
-    )
+    return matrizDeRegras.firstOrNull { it.condicao(contexto) }
+        ?.decisao(contexto)
+        ?: DecisaoGate(
+            resultado = ResultadoTriagem.AREA_DESCANSO,
+            mensagem = "Situação não identificada. Procure um atendente.",
+            corIndicador = 0xFF888780
+        )
 }

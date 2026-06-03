@@ -1,6 +1,5 @@
 package com.example.clickbus.gate
 
-import android.R
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,188 +14,79 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.clickbus.gate.modelo.formatarHoraAtual
+import com.example.clickbus.gate.modelo.gerarTicketAleatorio
+import com.example.clickbus.gate.modelo.usuarioLogado
+import com.example.clickbus.gate.regras.DecisaoGate
+import com.example.clickbus.gate.ui.HistoricoScreen
+import com.example.clickbus.gate.ui.ResultadoCard
+import com.example.clickbus.gate.ui.SwipeTicketCard
 import com.example.clickbus.gate.ui.theme.GateClickBusTheme
+import kotlinx.coroutines.delay
+import java.time.LocalDateTime
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContent {
-            GateClickBusTheme {
-                GateTela()
-            }
-        }
+        setContent { GateClickBusTheme { AppRoot() } }
     }
 }
 
 @Composable
-fun GateTela() {
-    var ticket by remember { mutableStateOf(gerarTicketAleatorio()) }
-    var horarioAtualMinutos by remember { mutableStateOf(720)}
+fun AppRoot() {
+    var telaHistorico by remember { mutableStateOf(false) }
+    if (telaHistorico) {
+        HistoricoScreen(usuarioId = usuarioLogado.id, onVoltar = { telaHistorico = false })
+    } else {
+        GateTela(onAbrirHistorico = { telaHistorico = true })
+    }
+}
+
+@Composable
+fun GateTela(onAbrirHistorico: () -> Unit) {
+    var ticket by remember { mutableStateOf(gerarTicketAleatorio(usuarioLogado)) }
     var decisao by remember { mutableStateOf<DecisaoGate?>(null) }
+    var agora by remember { mutableStateOf(LocalDateTime.now()) }
+
+    LaunchedEffect(Unit) {
+        while (true) { delay(1000); agora = LocalDateTime.now() }
+    }
+
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFF1a1a2e)),
+        modifier = Modifier.fillMaxSize().background(Color(0xFF1a1a2e)),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "GATE ClickBus",
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(top = 48.dp, bottom = 4.dp)
-        )
-        Text(
-            text = "Simulador MVP",
-            color = Color(0x99FFFFFF),
-            fontSize = 14.sp,
-            modifier = Modifier.padding(bottom = 24.dp)
-        )
-        Card(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFF303042))
+        Row(
+            modifier = Modifier.fillMaxWidth().background(Color(0xFF16213E))
+                .padding(horizontal = 16.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Column(modifier = Modifier.padding(20.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    InfoItem(label = "Passageiro", valor = ticket.passageiro)
-                    InfoItem(label = "Plataforma", valor = ticket.plataforma.nome)
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    InfoItem(label = "Origem", valor = ticket.origem)
-                    InfoItem(label = "Destino", valor = ticket.destino)
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    InfoItem(
-                        label = "Embarque",
-                        valor = minutosParaHorario(ticket.horarioEmbarqueMinutos)
-                    )
-                    InfoItem(
-                        label = "Ocupação",
-                        valor = ticket.plataforma.ocupacao.name
-                    )
-                }
+            Text(formatarHoraAtual(agora), color = Color(0xFF4F9CF9), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            TextButton(onClick = onAbrirHistorico) {
+                Text("Histórico", color = Color(0xFF4F9CF9), fontSize = 13.sp)
             }
         }
 
-        Spacer(modifier = Modifier.height(24.dp))
+        Text("GATE ClickBus", color = Color.White, fontSize = 24.sp, fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(top = 24.dp, bottom = 2.dp))
+        Text(usuarioLogado.nome, color = Color(0x99FFFFFF), fontSize = 13.sp,
+            modifier = Modifier.padding(bottom = 24.dp))
 
-        Text(
-            text = "Horario atual: ${minutosParaHorario(horarioAtualMinutos)}",
-            color = Color.White,
-            fontSize = 14.sp,
-            modifier = Modifier.padding(horizontal = 24.dp)
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Slider(
-            value = horarioAtualMinutos.toFloat(),
-            onValueChange = {horarioAtualMinutos = it.toInt()},
-            valueRange = 360f..1320f,
-            modifier = Modifier.padding(horizontal = 24.dp),
-            colors = SliderDefaults.colors(
-                thumbColor = Color(0xFF4F9CF9),
-                activeTrackColor = Color(0xFF4F9CF9),
-                inactiveTrackColor = Color(0xFF16213E)
-            )
-        )
+        SwipeTicketCard(ticket = ticket, onValidado = { decisao = it })
 
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { ticket = gerarTicketAleatorio() },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .height(52.dp),
+            onClick = { ticket = gerarTicketAleatorio(usuarioLogado); decisao = null },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 24.dp).height(52.dp),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F9CF9))
         ) {
-            Text(
-                text = "Gerar Novo Ticket",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Text("Gerar Novo Ticket", fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        Button(
-            onClick = {
-                val contexto = criarContexto(
-                    ticket = ticket,
-                    horarioAtualMinutos = horarioAtualMinutos
-                )
-                decisao = aplicarMotorDeRegras(contexto)
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 24.dp)
-                .height(52.dp),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFF639922)
-            )
-        ) {
-            Text(
-                text = "Validar Ticket",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-        }
-
-        Spacer(modifier =  Modifier.height(24.dp))
-
-        decisao?.let {d ->
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 24.dp),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(
-                    containerColor = Color(d.corIndicador)
-                )
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text(
-                        text = "${d.resultado.titulo}",
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                        }
-                }
-            }
-        }
-    }
-
-@Composable
-fun InfoItem(label: String, valor: String) {
-    Column {
-        Text(
-            text = label,
-            color = Color(0x99FFFFFF),
-            fontSize = 11.sp
-        )
-        Text(
-            text = valor,
-            color = Color.White,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium
-        )
+        Spacer(modifier = Modifier.height(24.dp))
+        decisao?.let { ResultadoCard(it) }
     }
 }

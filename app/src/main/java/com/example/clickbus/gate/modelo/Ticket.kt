@@ -1,6 +1,8 @@
-package com.example.clickbus.gate
+package com.example.clickbus.gate.modelo
 
-enum class OcupacaoPlataforma  {
+import java.time.LocalDateTime
+
+enum class OcupacaoPlataforma {
     VAZIA, NORMAL, CHEIA
 }
 
@@ -11,9 +13,9 @@ data class Plataforma(
 )
 
 data class Ticket(
-    val passageiro:String,
+    val passageiro: String,
     val origem: String,
     val destino: String,
     val plataforma: Plataforma,
-    val horarioEmbarqueMinutos: Int
+    val dataHoraEmbarque: LocalDateTime
 )
