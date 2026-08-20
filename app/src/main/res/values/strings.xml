@@ -1,3 +1,7 @@
 <resources>
-    <string name="app_name">GateClickBus</string>
+    <string name="app_name">Gate - ClickBus</string>
+    <string name="History">History</string>
+    <string name="NewTicket">Gerate New Ticket</string>
+    <string name="ValidationTicket"> →  Release to validate</string>
+
 </resources>

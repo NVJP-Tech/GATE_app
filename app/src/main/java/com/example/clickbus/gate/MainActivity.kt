@@ -11,6 +11,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -48,9 +49,9 @@ fun GateTela(onAbrirHistorico: () -> Unit) {
     var decisao by remember { mutableStateOf<DecisaoGate?>(null) }
     var agora by remember { mutableStateOf(LocalDateTime.now()) }
 
-    LaunchedEffect(Unit) {
-        while (true) { delay(1000); agora = LocalDateTime.now() }
-    }
+//    LaunchedEffect(Unit) {
+//        while (true) { delay(1000); agora = LocalDateTime.now() }
+//    }
 
     Column(
         modifier = Modifier.fillMaxSize().background(Color(0xFF1a1a2e)),
@@ -62,9 +63,9 @@ fun GateTela(onAbrirHistorico: () -> Unit) {
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(formatarHoraAtual(agora), color = Color(0xFF4F9CF9), fontSize = 14.sp, fontWeight = FontWeight.Medium)
+//            Text(formatarHoraAtual(agora), color = Color(0xFF4F9CF9), fontSize = 14.sp, fontWeight = FontWeight.Medium)
             TextButton(onClick = onAbrirHistorico) {
-                Text("Histórico", color = Color(0xFF4F9CF9), fontSize = 13.sp)
+                Text(stringResource(R.string.History), color = Color(0xFF4F9CF9), fontSize = 13.sp)
             }
         }
 
@@ -83,7 +84,7 @@ fun GateTela(onAbrirHistorico: () -> Unit) {
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4F9CF9))
         ) {
-            Text("Gerar Novo Ticket", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+            Text(stringResource(R.string.NewTicket), fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
 
         Spacer(modifier = Modifier.height(24.dp))

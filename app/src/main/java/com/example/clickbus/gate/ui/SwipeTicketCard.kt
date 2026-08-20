@@ -15,11 +15,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import com.example.clickbus.gate.R
 import com.example.clickbus.gate.modelo.Ticket
 import com.example.clickbus.gate.modelo.formatarDataHora
 import com.example.clickbus.gate.regras.DecisaoGate
@@ -64,7 +66,7 @@ fun SwipeTicketCard(
                 .padding(horizontal = 24.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("→  Solte para validar", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            Text(stringResource(R.string.ValidationTicket), color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Medium)
         }
 
         Card(
@@ -106,7 +108,7 @@ fun SwipeTicketCard(
                 }
                 Spacer(modifier = Modifier.height(12.dp))
                 Text(
-                    text = "← Arraste para validar →",
+                    text = stringResource(R.string.ValidationTicket),
                     color = Color(0x66FFFFFF), fontSize = 11.sp,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
                 )
