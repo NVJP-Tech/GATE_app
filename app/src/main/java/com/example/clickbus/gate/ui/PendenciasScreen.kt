@@ -13,29 +13,28 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.clickbus.gate.api.HistoricoItem
 import com.example.clickbus.gate.api.RetrofitClient
+import com.example.clickbus.gate.api.dto.RemarcacaoResponse
+import com.example.clickbus.gate.api.mensagemDeErro
+import com.example.clickbus.gate.ui.theme.FundoInicioTopo
 import kotlinx.coroutines.launch
-
-private fun corDoResultado(resultado: String): Color = when (resultado) {
-    "EMBARQUE_IMEDIATO" -> Color(0xFF639922)
-    "REALOCACAO"        -> Color(0xFFE24B4A)
-    else                -> Color(0xFF378ADD)
-}
+import retrofit2.HttpException
 
 @Composable
-fun HistoricoScreen(usuarioId: String, onVoltar: () -> Unit) {
-    var historico by remember { mutableStateOf<List<HistoricoItem>>(emptyList()) }
+fun PendenciasScreen(onVoltar: () -> Unit) {
+    var pendentes by remember { mutableStateOf<List<RemarcacaoResponse>>(emptyList()) }
     var carregando by remember { mutableStateOf(true) }
     var erro by remember { mutableStateOf<String?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(usuarioId) {
+    LaunchedEffect(Unit) {
         scope.launch {
             try {
-                historico = RetrofitClient.api.historico(usuarioId)
+                pendentes = RetrofitClient.api.listarRemarcacoesPendentes()
+            } catch (e: HttpException) {
+                erro = e.mensagemDeErro()
             } catch (e: Exception) {
-                erro = "API indisponível — conecte o servidor Java."
+                erro = "Não foi possível conectar à API."
             } finally {
                 carregando = false
             }
@@ -44,7 +43,7 @@ fun HistoricoScreen(usuarioId: String, onVoltar: () -> Unit) {
 
     Column(modifier = Modifier.fillMaxSize().background(Color(0xFF1a1a2e))) {
         Row(
-            modifier = Modifier.fillMaxWidth().background(Color(0xFF16213E))
+            modifier = Modifier.fillMaxWidth().background(FundoInicioTopo)
                 .padding(horizontal = 16.dp, vertical = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -52,7 +51,7 @@ fun HistoricoScreen(usuarioId: String, onVoltar: () -> Unit) {
                 Text("← Voltar", color = Color(0xFF4F9CF9), fontSize = 14.sp)
             }
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Histórico", color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Text("Remarcações Pendentes", color = Color.White, fontSize = 16.sp, fontWeight = FontWeight.Bold)
         }
 
         when {
@@ -60,18 +59,17 @@ fun HistoricoScreen(usuarioId: String, onVoltar: () -> Unit) {
                 CircularProgressIndicator(color = Color(0xFF4F9CF9))
             }
             erro != null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text(erro!!, color = Color(0xFFE24B4A), fontSize = 13.sp,
-                    modifier = Modifier.padding(24.dp))
+                Text(erro!!, color = Color(0xFFE24B4A), fontSize = 13.sp, modifier = Modifier.padding(24.dp))
             }
-            historico.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                Text("Nenhuma validação registrada.", color = Color(0x99FFFFFF), fontSize = 14.sp)
+            pendentes.isEmpty() -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Nenhuma remarcação pendente.", color = Color(0x99FFFFFF), fontSize = 14.sp)
             }
             else -> LazyColumn(
                 modifier = Modifier.fillMaxSize(),
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(historico) { item ->
+                items(pendentes) { item ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -83,25 +81,19 @@ fun HistoricoScreen(usuarioId: String, onVoltar: () -> Unit) {
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text("${item.origem} → ${item.destino}", color = Color.White,
-                                    fontSize = 14.sp, fontWeight = FontWeight.Bold)
-                                Surface(shape = RoundedCornerShape(6.dp),
-                                    color = corDoResultado(item.resultadoTriagem)) {
-                                    Text(item.plataforma, color = Color.White, fontSize = 12.sp,
-                                        fontWeight = FontWeight.Bold,
+                                Text(item.codigoQrTicketOriginal, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                                Surface(shape = RoundedCornerShape(6.dp), color = Color(0xFFE24B4A)) {
+                                    Text(item.status, color = Color.White, fontSize = 11.sp, fontWeight = FontWeight.Bold,
                                         modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp))
                                 }
                             }
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text(item.mensagem, color = Color(0xCCFFFFFF), fontSize = 12.sp)
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Row(modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceBetween) {
-                                Text("Embarque: ${item.dataHoraEmbarque.take(16).replace("T", " ")}",
-                                    color = Color(0x99FFFFFF), fontSize = 11.sp)
-                                Text("Validado: ${item.dataHoraValidacao.take(16).replace("T", " ")}",
-                                    color = Color(0x99FFFFFF), fontSize = 11.sp)
+                            item.motivo?.let {
+                                Spacer(modifier = Modifier.height(6.dp))
+                                Text(it, color = Color(0xCCFFFFFF), fontSize = 12.sp)
                             }
+                            Spacer(modifier = Modifier.height(6.dp))
+                            Text("Registrado em: ${item.dataHora.take(16).replace("T", " ")}",
+                                color = Color(0x99FFFFFF), fontSize = 11.sp)
                         }
                     }
                 }

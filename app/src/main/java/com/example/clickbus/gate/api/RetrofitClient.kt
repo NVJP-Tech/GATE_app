@@ -7,21 +7,26 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 object RetrofitClient {
 
-    // Trocar pela URL do servidor quando o backend estiver deployado
-    private const val BASE_URL = "http://10.0.2.2:8080/api/"
+    // 10.0.2.2 é o alias especial do emulador Android para o "localhost"
+    // da maquina onde o emulador esta rodando (onde a API Java esta no ar).
+    // Se for testar em CELULAR FISICO na mesma rede Wi-Fi, troque pelo IP
+    // da sua maquina (ex: "http://192.168.0.15:8080/").
+    private const val BASE_URL = "http://10.0.2.2:8080/"
 
-    private val okHttp = OkHttpClient.Builder()
-        .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BODY
-        })
+    private val loggingInterceptor = HttpLoggingInterceptor().apply {
+        level = HttpLoggingInterceptor.Level.BODY
+    }
+
+    private val okHttpClient = OkHttpClient.Builder()
+        .addInterceptor(loggingInterceptor)
         .build()
 
-    val api: GateApiService by lazy {
+    val api: ClickBusApiService by lazy {
         Retrofit.Builder()
             .baseUrl(BASE_URL)
-            .client(okHttp)
+            .client(okHttpClient)
             .addConverterFactory(GsonConverterFactory.create())
             .build()
-            .create(GateApiService::class.java)
+            .create(ClickBusApiService::class.java)
     }
 }
