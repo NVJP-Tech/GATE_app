@@ -15,21 +15,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import com.example.clickbus.gate.api.dto.ValidacaoResponse
-import com.example.clickbus.gate.api.mensagemDeErro
-import com.example.clickbus.gate.ui.theme.TextoBranco
-import com.example.clickbus.gate.validacao.validarTicket
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.qrcode.QRCodeWriter
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import retrofit2.HttpException
 import kotlin.math.roundToInt
 
 private const val LIMITE_SWIPE = 150f
@@ -45,24 +38,21 @@ private fun gerarQrBitmap(conteudo: String, tamanho: Int = 512): Bitmap {
     return bitmap
 }
 
+/**
+ * So cuida do gesto (swipe -> mostra QR -> confirma). Nao faz chamada de
+ * rede aqui dentro - isso e responsabilidade de quem chama
+ * onConfirmarValidacao, porque este composable e removido da tela assim
+ * que a validacao comeca (troca para TelaCarregando), o que cancelaria
+ * qualquer coroutine lancada aqui dentro.
+ */
 @Composable
 fun SwipeTicketCard(
     codigoQr: String,
     canalAppGps: Boolean,
-    onSolicitarPermissaoLocalizacao: () -> Unit,
-    onCarregando: () -> Unit,
-    onResultado: (ValidacaoResponse) -> Unit,
-    onErro: (String) -> Unit
+    onConfirmarValidacao: () -> Unit
 ) {
-    val context = LocalContext.current
     val offsetX = remember { Animatable(0f) }
-
-    // 1. Escopo para animações do Card (pode morrer ao desmontar)
-    val cardScope = rememberCoroutineScope()
-
-    // 2. Escopo para requisição HTTP (mantido via composition para durar a transição)
-    val apiScope = rememberCoroutineScope()
-
+    val scope = rememberCoroutineScope()
     var mostrarQr by remember { mutableStateOf(false) }
 
     Box(modifier = Modifier.fillMaxWidth()) {
@@ -85,11 +75,11 @@ fun SwipeTicketCard(
                     detectDragGestures(
                         onDragEnd = {
                             if (offsetX.value >= LIMITE_SWIPE) mostrarQr = true
-                            cardScope.launch { offsetX.animateTo(0f, spring()) }
+                            scope.launch { offsetX.animateTo(0f, spring()) }
                         },
                         onDrag = { change, dragAmount ->
                             change.consume()
-                            cardScope.launch {
+                            scope.launch {
                                 val novo = (offsetX.value + dragAmount.x).coerceIn(0f, LIMITE_SWIPE * 1.3f)
                                 offsetX.snapTo(novo)
                             }
@@ -114,10 +104,9 @@ fun SwipeTicketCard(
     }
 
     if (mostrarQr) {
-        var validando by remember { mutableStateOf(false) }
         val qrBitmap = remember(codigoQr) { gerarQrBitmap(codigoQr) }
 
-        Dialog(onDismissRequest = { if (!validando) mostrarQr = false }) {
+        Dialog(onDismissRequest = { mostrarQr = false }) {
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White)
@@ -139,8 +128,7 @@ fun SwipeTicketCard(
                     Button(
                         onClick = {
                             mostrarQr = false
-                            // Dispara o fluxo da MainActivity (que muda pra TelaCarregando e faz a chamada HTTP)
-                            onCarregando()
+                            onConfirmarValidacao()
                         },
                         modifier = Modifier.fillMaxWidth(),
                         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF16A34A))

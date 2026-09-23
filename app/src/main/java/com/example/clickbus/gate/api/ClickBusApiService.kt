@@ -1,6 +1,7 @@
 package com.example.clickbus.gate.api
 
 import com.example.clickbus.gate.api.dto.RemarcacaoResponse
+import com.example.clickbus.gate.api.dto.TicketDto
 import com.example.clickbus.gate.api.dto.ValidacaoRequest
 import com.example.clickbus.gate.api.dto.ValidacaoResponse
 import retrofit2.http.Body
@@ -14,5 +15,8 @@ interface ClickBusApiService {
 
     @GET("remarcacoes/pendentes")
     suspend fun listarRemarcacoesPendentes(): List<RemarcacaoResponse>
+
+    @GET("tickets")
+    suspend fun listarTickets(): List<TicketDto>
 
 }
