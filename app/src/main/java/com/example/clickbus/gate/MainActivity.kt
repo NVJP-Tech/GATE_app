@@ -27,6 +27,7 @@ import com.example.clickbus.gate.ui.SwipeTicketCard
 import com.example.clickbus.gate.ui.TelaErro
 import com.example.clickbus.gate.ui.TelaResultado
 import com.example.clickbus.gate.ui.theme.*
+import com.example.clickbus.gate.ui.mapa.MapaPlataformaScreen
 import com.example.clickbus.gate.validacao.validarTicket
 import kotlinx.coroutines.launch
 import retrofit2.HttpException
@@ -45,6 +46,7 @@ private sealed class TelaEstado {
     data object MinhasViagens : TelaEstado()
     data object Carregando : TelaEstado()
     data class Resultado(val dados: ValidacaoResponse) : TelaEstado()
+    data class Mapa(val plataformaNumero: String) : TelaEstado()   // NOVO
     data class Erro(val mensagem: String) : TelaEstado()
     data object Pendencias : TelaEstado()
 }
@@ -66,6 +68,7 @@ fun GateApp() {
         ActivityResultContracts.RequestPermission()
     ) { }
 
+    /*
     fun executarValidacao(codigo: String) {
         estado = TelaEstado.Carregando
         escopo.launch {
@@ -85,6 +88,32 @@ fun GateApp() {
         }
     }
 
+    */
+
+    fun executarValidacao(codigo: String) {
+        estado = TelaEstado.Carregando
+        escopo.launch {
+            try {
+                val resultado = validarTicket(
+                    context = context,
+                    codigoQr = codigo,
+                    canalAppGps = canalAppGps,
+                    solicitarPermissaoLocalizacao = { permissaoLocalizacao.launch(Manifest.permission.ACCESS_FINE_LOCATION) }
+                )
+                estado = if (resultado.resultadoTriagem == "EMBARQUE_IMEDIATO" && resultado.plataformaNumero != null) {
+                    TelaEstado.Mapa(resultado.plataformaNumero)
+                } else {
+                    TelaEstado.Resultado(resultado)
+                }
+            } catch (e: HttpException) {
+                estado = TelaEstado.Erro(e.mensagemDeErro())
+            } catch (e: Exception) {
+                estado = TelaEstado.Erro("Não foi possível conectar à API. Verifique se ela está no ar.")
+            }
+        }
+    }
+
+    /*
     when (val atual = estado) {
         is TelaEstado.Formulario -> TelaFormulario(
             codigoQr = codigoQr,
@@ -106,7 +135,33 @@ fun GateApp() {
         is TelaEstado.Erro -> TelaErro(atual.mensagem, onVoltar = { estado = TelaEstado.Formulario })
         is TelaEstado.Pendencias -> PendenciasScreen(onVoltar = { estado = TelaEstado.Formulario })
     }
-}
+
+*/
+
+    when (val atual = estado) {
+        is TelaEstado.Formulario -> TelaFormulario(
+            codigoQr = codigoQr,
+            canalAppGps = canalAppGps,
+            onCanalChange = { canalAppGps = it },
+            onAbrirMinhasViagens = { estado = TelaEstado.MinhasViagens },
+            onConfirmarValidacao = { codigo -> executarValidacao(codigo) },
+            onAbrirPendencias = { estado = TelaEstado.Pendencias }
+        )
+        is TelaEstado.MinhasViagens -> MinhasViagensScreen(
+            onSelectTicket = { codigo ->
+                codigoQr = codigo
+                estado = TelaEstado.Formulario
+            },
+            onVoltar = { estado = TelaEstado.Formulario }
+        )
+        is TelaEstado.Carregando -> TelaCarregando()
+        is TelaEstado.Resultado -> TelaResultado(atual.dados, onVoltar = { estado = TelaEstado.Formulario })
+        is TelaEstado.Mapa -> MapaPlataformaScreen(atual.plataformaNumero, onVoltar = { estado = TelaEstado.Formulario })
+        is TelaEstado.Erro -> TelaErro(atual.mensagem, onVoltar = { estado = TelaEstado.Formulario })
+        is TelaEstado.Pendencias -> PendenciasScreen(onVoltar = { estado = TelaEstado.Formulario })
+    }
+
+    }
 
 @Composable
 private fun TelaFormulario(
