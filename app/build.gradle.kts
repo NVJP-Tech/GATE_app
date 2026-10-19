@@ -45,7 +45,9 @@ dependencies {
     implementation(libs.androidx.compose.ui.graphics)
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
-    implementation("androidx.compose.material:material-icons-extended:1.7.5")  // <-- ADICIONA ESTA LINHA
+    implementation("androidx.work:work-runtime-ktx:2.9.1") // <-- trabalha "Fechado"
+    implementation("androidx.compose.material:material-icons-extended:1.7.5")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
     implementation("com.google.zxing:core:3.5.3")
 
     // --- Integração com a API ---
